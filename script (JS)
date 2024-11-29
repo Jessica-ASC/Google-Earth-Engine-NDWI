@@ -1,0 +1,33 @@
+// Définir la zone d'intérêt (AOI)
+var aoi = geometry
+
+// Définir la date de début et de fin pour rechercher l'image
+var startDate = '2024-05-06';
+var endDate = '2024-05-07';
+
+// Charger la collection Sentinel-2 et filtrer par date, couverture nuageuse et zone
+var collection = ee.ImageCollection('COPERNICUS/S2_SR')
+                  .filterDate(startDate, endDate)
+                  .filterBounds(aoi)
+                  .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 100));
+
+// Sélectionner la première image correspondant aux filtres
+var image = collection.first();
+
+// Vérifier si une image a été trouvée
+print('Image sélectionnée : ', image);
+
+// Calculer le NDWI
+var ndwi = image.normalizedDifference(['B3', 'B8']).rename('NDWI');
+
+// Afficher le NDWI
+Map.centerObject(aoi, 10);
+Map.addLayer(ndwi, {min: -1, max: 1, palette: ['blue', 'white', 'green']}, 'NDWI');
+
+  // Exporter le NDWI en tant qu'image
+  Export.image.toDrive({
+    image: ndwi.clip(aoi),
+    description: 'NDWI_SpecificImage_2024-05-06_p1',
+    scale: 10,
+    region: aoi
+  });
